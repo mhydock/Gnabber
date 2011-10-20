@@ -1,0 +1,15 @@
+Klepto-chan is a simple webcrawler, originally designed to scour Danbooru-style
+image boards, downloading images when direct links weren't provided on the 
+gallery pages. After a number of re-writes, the current interface and the HTML
+parser have been isolated, theoretically making Klepto-chan capable of combing
+ANY website and downloading ANY content the user wants.
+
+Currently, this versatility can only be accomplished by writing a custom parser
+class, modifying some code, and then recompiling, but in the future I hope to
+make the parser plugin-based, which would allow users to create and share site
+parsers, and swap them on the fly.
+
+Other planned features include a preferences editor (instead of needing to
+recompile), a download queue (for multiple sites), and right-click access to
+the freshly downloaded files and the directory they were downloaded to. For now
+though, all focus is on removing bugs and improving download speeds.

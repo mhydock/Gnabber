@@ -1,0 +1,2 @@
+Main-Class: KleptoChanListVer
+Class-Path: ./
