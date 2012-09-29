@@ -15,24 +15,17 @@ import java.io.*;
 
 public class Debugger
 {
-	private static Debugger d = new Debugger();
-	
 	// Variables dedicated to writing and synchronizing the log file.
-	private PrintStream log;
-	private File logFile;
-	private int logFiles = 0;
-	private boolean genLogFile = false;
+	private static PrintStream log;
+	private static File logFile;
+	private static int logFiles = 0;
+	private static boolean genLogFile = false;
 	
 	private Debugger()
 	{
 	}
 	
-	public static Debugger getInstance()
-	{
-		return d;
-	}
-	
-	public void setActive(boolean lf)
+	public static void setActive(boolean lf)
 	// Set whether the debugger should be active or not.
 	{
 		genLogFile = lf;
@@ -58,7 +51,7 @@ public class Debugger
 		}
 	}
 	
-	public void debug (String s)
+	public static void report (String s)
 	// Method to write progress/errors to a log file.
 	{
 		if (!genLogFile)

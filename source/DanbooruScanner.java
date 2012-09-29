@@ -1,6 +1,6 @@
 //==============================================================================
 // Date Created:		13 September 2010
-// Last Updated:		17 October 2011
+// Last Updated:		30 August 2012
 //
 // File name:			DanbooruScanner.java
 // File author:			Matthew Hydock
@@ -26,9 +26,6 @@ public class DanbooruScanner extends PageScanner
 	public FileConnection parsePage() throws Exception
 	// Parse the page. 
 	{
-		if (currLine == null || currLine.length() == 0)
-			return null;
-			
 		FileConnection connection = null;
 
 //------------------------------------------------------------------------------
@@ -104,27 +101,8 @@ public class DanbooruScanner extends PageScanner
 				currLine = currLine.substring(end, currLine.length());
 			}
 			
-			else if (currLine.contains("paginator"))
-			{
-				int start = currLine.indexOf("a href", currLine.lastIndexOf("</b>")+4)+1;
-				
-				if (start != -1)
-				{
-					start = currLine.indexOf('/',start);
-					int end = currLine.indexOf('\"',start);
-				
-					if (end == -1)
-						end = currLine.indexOf('\'',start);
-
-					nextPage = serverName + currLine.substring(start,end);
-				
-					// Snip off this part of the current line, and continue parsing.
-					currLine = currLine.substring(end, currLine.length());
-				}
-			}
-			
 			if (nextPage != null)
-				System.out.println(nextPage);				
+				Debugger.report("Next page located at " + nextPage);				
 		}		
 //------------------------------------------------------------------------------
 
@@ -151,18 +129,6 @@ public class DanbooruScanner extends PageScanner
 		{
 			int start = currLine.indexOf("/post/show/");
 			String imgPage = currLine.substring(start,currLine.indexOf('\"',start));
-				
-			connection = new FileConnection(getDirectLink(serverName+imgPage),saveTo);
-			
-			// Snip off this part of the current line, and continue parsing.
-			currLine = currLine.substring(start+imgPage.length(),currLine.length());
-		}
-		
-		else if (currLine.contains("/post/view/"))
-		// For Ponybooru, which has a slightly different backbone.
-		{
-			int start = currLine.indexOf("/post/view/");
-			String imgPage = currLine.substring(start,currLine.indexOf('\'',start));
 				
 			connection = new FileConnection(getDirectLink(serverName+imgPage),saveTo);
 			
@@ -207,20 +173,21 @@ public class DanbooruScanner extends PageScanner
 			if (currLine.contains("id=\"highres\"") || currLine.contains("Original image"))
 			// Found link, save link location as URL.
 			{
+				String url = "";
+				
 				int start = currLine.indexOf("http://");
+
+				if (start == -1)
+				// In case files are stored on the same server, and their
+				// address is relational.
+				{
+					start = currLine.indexOf("href=\"") + 7;
+					url += serverName;
+				}
+					
 				int end = currLine.indexOf('\"',start);
 				
-				link = new URL(currLine.substring(start,end));
-				break;
-			}
-			
-			if (currLine.contains("id=\'main_image\'"))
-			// Because Ponibooru just has to be different...
-			{
-				int start = currLine.indexOf("http://");
-				int end = currLine.indexOf('\'',start);
-				
-				link = new URL(currLine.substring(start,end));
+				link = new URL(url+currLine.substring(start,end));
 				break;
 			}
 		}

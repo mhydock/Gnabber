@@ -1,6 +1,6 @@
 //==============================================================================
 // Date Created:		2 August 2009
-// Last Updated:		17 October 2011
+// Last Updated:		30 August 2012
 //
 // File name:			PageScanner.java
 // File author:			Matthew Hydock
@@ -28,7 +28,7 @@ abstract class PageScanner
 	protected HashMap<URL,Integer> history;
 
 	protected boolean scannerInit;
-	
+
 	protected Thread parent;
 //==============================================================================
 // Constructor, fairly bare-bones.
@@ -51,7 +51,7 @@ abstract class PageScanner
 		readLines = 0;
 		
 		scannerInit	= false;
-		
+
 		parent = null;
 	}
 //==============================================================================
@@ -90,10 +90,12 @@ abstract class PageScanner
 			// Open the reader and read in the first line.
 			pageReader = new BufferedReader(new InputStreamReader(currPage.openStream()));
 			currLine = pageReader.readLine();
-			readLines++;
 
 			if (currLine != null)
+			{
 				currLine.trim();
+				readLines++;
+			}
 		}
 		else
 		// Otherwise, just reconnect to the page.
@@ -103,32 +105,56 @@ abstract class PageScanner
 	}
 	
 	public void reconnect() throws Exception
-	// If the scanner is disconnected or a page is revisited, return to the last read line.
+	// If the scanner is disconnected (via exception, not on purpose), or a page
+	// is revisited, return to the last read line.
 	{
-		scannerInit = false;
-		
 		pageReader.close();
-		pageReader = null;
-		currLine = null;
-		
-		pageReader = new BufferedReader(new InputStreamReader(currPage.openStream()));
-		readLines = history.get(currPage);
+		pageReader	= null;
+		currLine	= null;
+
+		pageReader	= new BufferedReader(new InputStreamReader(currPage.openStream()));
+		readLines	= history.get(currPage);
 		
 		for (int i = 0; i < readLines; i++)
 			currLine = pageReader.readLine();
 		
 		if (currLine != null)
-			currLine.trim();
+			currLine = currLine.trim();
 
 		scannerInit = true;
+	}
+
+	public void disconnect() throws Exception
+	// Disconnect from the current page, and erase all variables that are set
+	// when connecting to a page.
+	{
+		// Shut down the page reader, and clear the page navigation limit.
+		pageReader.close();
+		pageReader	= null;
+		pageNavi	= 0;
+
+		// Erase path to save files to.
+		saveTo		= null;
+
+		// Erase name of server/page, and contents of last read line.
+		serverName	= null;
+		nextPage	= null;
+		currLine	= null;
+
+		// Erase URL of first page, and of last read page.
+		startURL	= null;
+		currPage	= null;
+
+		// The scanner is now uninitialized.
+		scannerInit = false;
 	}
 	
 	public boolean hasMoreLinks() throws Exception
 	// Checks if there are more images to be downloaded.
 	{
-		if (scannerInit == false) throw new Exception("Scanner not initialized yet.");
+		if (scannerInit == false) throw new Exception("PageScanner: Not yet initialized.");
 		
-		return scannerInit = (currLine != null) || (nextPage != null);
+		return currLine != null || nextPage != null;
 	}
 	
 	public void clearHistory()
@@ -142,15 +168,13 @@ abstract class PageScanner
 	{
 		return scannerInit;
 	}
-	
-	public void setParentThread(Thread t)
-	// Set the parent thread (helps make this thread-safe).
+
+	public void setParent(Thread p)
 	{
-		parent = t;
+		parent = p;
 	}
-	
-	public Thread getParentThread(Thread t)
-	// Return the parent thread (helps make this thread-safe).
+
+	public Thread getParent()
 	{
 		return parent;
 	}
@@ -175,9 +199,10 @@ abstract class PageScanner
 				currLine = pageReader.readLine();
 				
 				if (currLine != null)
+				{
 					currLine = currLine.trim();
-					
-				readLines++;
+					readLines++;
+				}
 			}
 			
 			// The reader has reached the end of the page, but there are still
@@ -188,31 +213,43 @@ abstract class PageScanner
 				currLine = pageReader.readLine();
 				
 				if (currLine != null)
+				{
 					currLine = currLine.trim();
-				
-				readLines++;
+					readLines++;
+				}
 			}
-			
+
 			// Attempt to create a connection.	
-			connection = parsePage();
-			
+			if (currLine != null && currLine.length() > 0)
+				connection = parsePage();
+
+			// A connection was made, print out its name (debugging).
 			if (connection != null)
-				System.out.println(connection.getName());
-			
+				Debugger.report("PageScanner: Created new connection: " + connection.getName());
+
+			// Check if the parent thread has been interrupted or not.
 			if (parent != null)
 				interrupted = parent.isInterrupted();
 		}
-			
+
+		// The scanner could not produce a connection :(
+		if (connection == null)
+			Debugger.report("PageScanner: Failed to produce a file connection.");
+
 		// The reader has reached the predetermined limit.
 		if (pageNavi == 0)
 		{
+			Debugger.report("PageScanner: Reached page limit.");
 			nextPage = null;
 			currLine = null;
 		}
 		
 		// Close the stream only if no more links remain.
 		if (nextPage == null && currLine == null)
+		{
+			Debugger.report("PageScanner: No more links or pages. Closing stream...");
 			pageReader.close();
+		}
 
 		// Record the page, and the number of lines read.
 		history.put(currPage,(Integer)readLines);

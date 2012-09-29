@@ -1,6 +1,6 @@
 //==============================================================================
 // Date Created:		1 December 2009
-// Last Updated:		17 October 2011
+// Last Updated:		29 August 2012
 //
 // File name:			FilesTable.java
 // File author:			Matthew Hydock
@@ -16,7 +16,7 @@ import java.util.Vector;
 public class FilesTable extends JTable
 {
 	private KleptoChanCore core = KleptoChanCore.getInstance();
-	private FilesTableModel tableModel = new FilesTableModel(core.fileList);
+	private FilesTableModel tableModel = new FilesTableModel(core.getFileList());
 	
 	public FilesTable()
 	{

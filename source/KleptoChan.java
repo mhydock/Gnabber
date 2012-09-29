@@ -1,6 +1,6 @@
 //==============================================================================
 // Date Created:		25 July 2009
-// Last Updated:		17 October 2011
+// Last Updated:		29 August 2012
 //
 // File name:			KleptoChan.java
 // File author:			Matthew Hydock
@@ -32,7 +32,7 @@ public class KleptoChan extends JFrame
 	private JButton fixFiles;
 	private JButton clearList;
 	private JButton browse;
-	
+
 	private JFrame globalThis;
 	
 	private GUIRefresher watcher;
@@ -41,10 +41,7 @@ public class KleptoChan extends JFrame
 	private volatile boolean isDownloading = false;
 	private volatile boolean repairMode = false;
 	private volatile String lastDir = null;
-	
-	// Singleton that acts as global debugger.
-	private Debugger d = Debugger.getInstance();
-	
+		
 	// Singleton that holds all core information.
 	private KleptoChanCore core = KleptoChanCore.getInstance();
 	
@@ -56,7 +53,7 @@ public class KleptoChan extends JFrame
 		super("Klepto-chan, the kleptomaniacal web crawler!");
 		
 		// Attempt to make a log file.
-		d.setActive(lf);
+		Debugger.setActive(lf);
 		
 		// Initialize the global variables.
 		core.init();
@@ -182,13 +179,9 @@ public class KleptoChan extends JFrame
 		setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 		validate();
 		setVisible(true);
-		
+
+		// This exists solely for the directory browsing dialog.
 		globalThis = this;
-		
-		// Create the threads.
-		core.initThreads();
-		
-		watcher	= new GUIRefresher(core.fileDownloader,core.listUpdater);
 	}
 //==============================================================================
 
@@ -207,14 +200,13 @@ public class KleptoChan extends JFrame
 				// Attempt to stop the threads.
 				try
 				{
-					core.fileDownloader.interrupt();
-					core.listUpdater.interrupt();
+					core.stopThreads();
 					watcher.interrupt();
 					
-					d.debug("Threads stopped.");
+					Debugger.report("KleptoChan: Threads stopped.");
 				}catch (Exception ex)
 				{
-					d.debug(ex.getMessage());
+					Debugger.report(ex.getMessage());
 				}
 				
 				isDownloading = false;
@@ -246,39 +238,29 @@ public class KleptoChan extends JFrame
 					// If fix button was clicked, re-add unfinished files, and continue scanning.
 					if (e.getSource() == fixFiles)
 					{
-						FileConnection temp;
-						
-						for (int i = 0; i < core.fileList.size() && core.brokenFiles > 0; i++)
-						{
-							temp = core.fileList.get(i);
-							if (temp.hasError())
-							{
-								temp.resetError();
-								core.brokenFiles--;
-							}
-						}
-						d.debug("[[Repair mode entered]]");
+						for (int i = 0; i < core.getNumTotal() && core.getNumBroken() > 0; i++)
+							core.resetFileConnectionError(i);
+							
+						Debugger.report("KleptoChan: [[Repair mode entered]]");
 					}
 					
-					core.pageURL	= urlField.getText();
-					core.saveTo		= saveField.getText();
+					core.setScannerParams(urlField.getText(),saveField.getText());
 					
-					// Recreated the dead threads.
+					// Recreate the dead threads.
 					core.initThreads();
 					
 					// Start running the threads.
-					core.listUpdater.start();
-					core.fileDownloader.start();
+					core.startThreads();
 					
 					// Reset and start the watcher.
 					watcher = null;
-					watcher	= new GUIRefresher(core.fileDownloader,core.listUpdater);
+					watcher	= new GUIRefresher();
 					watcher.start();
 					
-					d.debug("Threads started.");
+					Debugger.report("KleptoChan: Threads started.");
 				}catch (Exception ex)
 				{
-					d.debug(ex.getMessage());
+					Debugger.report(ex.getMessage());
 					actionPerformed(null);
 				}
 			}
@@ -290,12 +272,7 @@ public class KleptoChan extends JFrame
 	{
 		public void actionPerformed(ActionEvent e)
 		{
-			core.scanner.clearHistory();
-			core.fileList.clear();
-			
-			core.doneFiles = 0;
-			core.totalFiles = 0;
-			core.brokenFiles = 0;
+			core.resetFileLists();
 			
 			output.setText("Download Progress -- (0/0)");
 
@@ -340,51 +317,32 @@ public class KleptoChan extends JFrame
 //==============================================================================
 // Thread classe to refresh the interface.
 //==============================================================================
-	class GUIRefresher extends Thread
-	{
-		FileDownloadThread fdthread;
-		FileListUpdateThread fluthread;
-	
-		public GUIRefresher(FileDownloadThread fd, FileListUpdateThread flu)
-		{
-			super();
-			
-			fdthread = fd;
-			fluthread = flu;
-		}
-	
+	class GUIRefresher extends ThreadPlus
+	{	
 		public void run()
 		// Redraw the GUI as long as the other threads are active.
 		{
-			while (!isInterrupted() && (!fluthread.isInterrupted() || !fdthread.isInterrupted()))
+			while (core.isRunning() && core.stillDownloading())
 			{
-				try
-				{
-					refresh();
-					Thread.sleep(5);
-				}catch (Exception e)
-				{
-					d.debug(e.getMessage());
-				}
+				refresh();
+				safeSleep(5);
 			}
 			
 			refresh();
-			if (!isInterrupted() && isDownloading) download.doClick();
+			if (core.isRunning() && isDownloading) download.doClick();
 			
 			System.out.println("stuff done.");
 			if (isDownloading)	System.out.println("isDownloading true");
 			else				System.out.println("isDownloading false");
 			System.out.flush();
-			
-			interrupt();
 		}
 						
 		private synchronized void refresh()
 		// Refresh various fields with updated data.
 		{
-			output.setText("Download Progress -- (" + core.doneFiles + "/" + core.totalFiles + ")");
-			output.validate();			output.repaint();
-			listScroller.validate();	listScroller.repaint();
+			output.setText("Download Progress -- (" + core.getNumFinished() + "/" + core.getNumTotal() + ")");
+			output.revalidate();		output.repaint();
+			outputTable.revalidate();	outputTable.repaint();
 		}	
 	}
 //==============================================================================

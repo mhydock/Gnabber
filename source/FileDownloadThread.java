@@ -1,6 +1,6 @@
 //==============================================================================
 // Date Created:		10 October 2009
-// Last Updated:		17 October 2011
+// Last Updated:		30 August 2012
 //
 // File name:			FileDownloadThread.java
 // File author:			Matthew Hydock
@@ -9,39 +9,75 @@
 //						at a time.
 //==============================================================================
 
-import java.util.ArrayDeque;
 
 class FileDownloadThread extends ThreadPlus
 // Class to download a file through a connection.
 {
-	private int arrayLocation;
-	private FileConnection thisCon;
-	private ArrayDeque<FileConnection> fileQueue;
+	private int aLoc;					// Array location.
+	private int qPos;					// Queue position.
+	private FileConnection[] queue;	// File queue.
 	
 	public void run()
 	// Pull an available file connection from the list, and start downloading.
 	{
-		d.debug("File download thread started.");
-			
-		arrayLocation = 0;
-		thisCon = null;
-		fileQueue = new ArrayDeque<FileConnection>(core.maxQueueLength);
-		
+		Debugger.report("FileDownloadThread: Started.");
+
+		// Allow "resume" functionality.
+		aLoc = core.getNumBroken() + core.getNumFinished();
+
+		// Always start with an empty queue.
+		qPos = 0;
+
+		queue = new FileConnection[core.getMaxQueueLength()];
+				
 		// Wait for the page scanner to be initialized.
-		while (!isInterrupted() && !core.scanner.isInitialized())
+		while (core.isRunning() && !core.isScannerInitialized())
 			yield();
 
-		while (!isInterrupted() && (core.scanner.isInitialized() || !fileQueue.isEmpty()))
-		// Start retrieving links and downloading files.
-		{			
-			// Fill the download queue to max capacity.	
-			populateQueue();
+		while (core.isRunning() && core.isScannerInitialized())
+		// Start retrieving links and downloading files. This loop is kind of
+		// dumb; if there are no more links in the file list, and if the queue
+		// is empty, it will still iterate through the queue looking for work.
+		// The only way it will stop is if an outside force, like the core,
+		// interrupts it.
+		{
+			if (queue[qPos] == null && aLoc < core.getFileList().size())
+			{
+				queue[qPos] = core.getFileConnection(aLoc);
 
-			// Pull off the first connection.
-			thisCon = fileQueue.poll();				
+				Debugger.report("FileDownloadThread: " + queue[qPos].getName() + " added to download queue.");
 				
-			// If the current connection isn't null, do stuff with it.
-			if (thisCon != null)
+				try
+				// Attempt to initialize the file connection. If the file is
+				// not done yet, add it to the queue and advance the index
+				// in the file array.
+				{
+					queue[qPos].initConnections();
+
+					if (queue[qPos].isDone())
+					{
+						Debugger.report("FileDownloadThread: " + queue[qPos].getName() + " already completed. Skipping...");
+
+						queue[qPos].closeConnections();
+						queue[qPos] = null;
+						core.incrementFinished();
+					}
+				}
+				catch (Exception e)
+				// There was a problem connecting to the file. Make note of
+				// this, and add the file to the broken list.
+				{
+					core.incrementBroken();
+					Debugger.report("FileDownloadThread: Error in initializing connections with file " + queue[qPos].getLinkURL());
+					Debugger.report(e.getMessage());
+				}
+
+				aLoc++;
+			}
+
+			if (queue[qPos] != null)
+			// If the current position in the queue is an active connection,
+			// update the connection.
 			{
 				// Attempt to download a chunk of data
 				downloadChunk();
@@ -50,81 +86,43 @@ class FileDownloadThread extends ThreadPlus
 				cleanup();
 			}
 			
-			try
+			// Advance the position of the queue.
+			qPos++;
+
+			// The end of the queue has been reached, loop back to beginning.
+			if (qPos >= core.getMaxQueueLength())
+				qPos = 0;
+
+			// Sleep a little, to prevent event coalescence.
+			safeSleep(5);
+		}
+
+		for (int i = 0; i < core.getMaxQueueLength(); i++)
+		// Close all connections that might have been open at the time of thread
+		// interruption.
+		{
+			if (queue[i] != null)
 			{
-				Thread.sleep(5);
-			}catch (Exception e)
-			{
-				d.debug(e.getMessage());
+				if (queue[i].isDone())
+					core.incrementFinished();
+
+				try
+				{
+					queue[i].closeConnections();
+				}
+				catch (Exception e)
+				{
+					Debugger.report(e.getMessage());
+				}
+				queue[i] = null;
 			}
 		}
-							
-		d.debug("Thread has finished work.");
-		interrupt();
+		
+		Debugger.report("FileDownloadThread: Finished work");
 	}
 //==============================================================================
 // Private methods. Separated from run() to clean it up.
 //==============================================================================
-
-//------------------------------------------------------------------------------
-// Queue management.
-//------------------------------------------------------------------------------	
-	private void populateQueue()
-	// Populate the download queue to max capacity.
-	{
-		FileConnection temp = null;
-		
-		if (!isInterrupted() && fileQueue.size() < core.maxQueueLength && arrayLocation < core.fileList.size())
-		// Populate the queue.
-		{
-			synchronized (core.fileList)
-			{
-				temp = core.fileList.get(arrayLocation);
-			}
-					
-			if (!temp.isDone() && !temp.hasError())
-			{
-				try
-				// Attempt to initialize the file connection.
-				{
-					initConnection(temp);
-				}catch (Exception e)
-				// There was a problem connecting to the file. Make note of this,
-				// and add the file to the broken list.
-				{
-					d.debug("Error in initializing connections with file " + temp.getLinkURL());
-					d.debug(e.getMessage());
-					core.brokenFiles++;
-				}
-			}
-			
-			arrayLocation++;
-		}
-	}
-	
-	private void initConnection(FileConnection conn) throws Exception
-	// Initialize a file connection.
-	{
-		conn.initConnections();
-
-		// If file isn't already done, add to queue.
-		if (!conn.isDone())
-		{
-			fileQueue.offer(conn);
-			d.debug("Connection made, proceeding to download...");
-		}
-				
-		// If file is already done, just skip it.
-		else
-		{
-			conn.closeConnections();
-			core.doneFiles++;
-			d.debug("File already completed.");
-		}
-	}
-//------------------------------------------------------------------------------
-
-
 //------------------------------------------------------------------------------
 // File connection management.
 //------------------------------------------------------------------------------	
@@ -135,21 +133,24 @@ class FileDownloadThread extends ThreadPlus
 	{
 		try
 		{
-			thisCon.writeDataToFile();
-		} catch (Exception e)
+			queue[qPos].writeDataToFile();
+		}
+		catch (Exception e)
 		{
+			Debugger.report("FileDownloadThread: Download of " + queue[qPos].getName() + "(" + queue[qPos].getCurrentSize() + "/" + queue[qPos].getFinalSize() + ") halted.\n" + 
+					"\t\tDownload the full file through another app using this address:\n" + queue[qPos].getLinkURL());
+			Debugger.report(e.getMessage());
+			
 			try
 			{
-				thisCon.closeConnections();
-			}catch (Exception e2)
-			{
-				d.debug(e2.getMessage());
+				queue[qPos].closeConnections();
+				queue[qPos] = null;
 			}
-			core.brokenFiles++;
-
-			d.debug("Download of " + thisCon.getName() + "(" + thisCon.getCurrentSize() + "/" + thisCon.getFinalSize() + ") halted.\n" + 
-					"Download the full file through another app using this address:\n" + thisCon.getLinkURL());
-			d.debug(e.getMessage());
+			catch (Exception e2)
+			{
+				Debugger.report(e2.getMessage());
+			}
+			core.incrementBroken();
 		}
 	}
 	
@@ -158,26 +159,25 @@ class FileDownloadThread extends ThreadPlus
 	// the connection where it belongs, either in the finished list or back in
 	// the download queue. 
 	{
-		if (!thisCon.hasError())
+		if (!queue[qPos].hasError())
 		// If the current connection does not have an error...
 		{
-			if (thisCon.isDone())
+			if (queue[qPos].isDone())
 			// If file is done downloading, add connection to finished list.
 			{
+				Debugger.report("FileDownloadThread: Download of " + queue[qPos].getName() + "(" + queue[qPos].getCurrentSize() + "/" + queue[qPos].getFinalSize() + ") completed.");
+
 				try
 				{
-					thisCon.closeConnections();
-				}catch (Exception e)
-				{
-					d.debug(e.getMessage());
+					queue[qPos].closeConnections();
+					queue[qPos] = null;
 				}
-				core.doneFiles++;
-
-				d.debug("Download of " + thisCon.getName() + "(" + thisCon.getCurrentSize() + "/" + thisCon.getFinalSize() + ") completed.");
+				catch (Exception e)
+				{
+					Debugger.report(e.getMessage());
+				}
+				core.incrementFinished();
 			}
-			else
-			// Otherwise, return it to the queue.
-				fileQueue.offer(thisCon);
 		}
 	}
 //------------------------------------------------------------------------------
