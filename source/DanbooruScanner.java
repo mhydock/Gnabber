@@ -9,20 +9,9 @@
 
 import java.io.*;
 import java.net.*;
-import java.util.HashMap;
 
 public class DanbooruScanner extends PageScanner
-{
-	private boolean isPool;
-	
-	public void connectToPage(String pagename, String saveLoc, int maxPage) throws Exception
-	// Adds the possibility of the page being a pool to the connectToPage
-	// method. 
-	{
-		super.connectToPage(pagename,saveLoc,maxPage);
-		isPool = false;	
-	}
-		
+{		
 	public FileConnection parsePage() throws Exception
 	// Parse the page. 
 	{
@@ -30,36 +19,7 @@ public class DanbooruScanner extends PageScanner
 
 //------------------------------------------------------------------------------
 // The following conditionals modify the parser's state.
-//------------------------------------------------------------------------------
-		if (currLine.contains("Featured_Imageleft"))
-		{
-			while (currLine.contains("Featured_Imageleft"))
-				currLine = pageReader.readLine();
-				
-			if (currLine != null)
-				currLine = currLine.trim();
-		}
-		
-		if (currLine.contains("popular-preview"))
-		// Skip the preview of the most popular images, because they'll be
-		// picked up eventually, and will cause conflicts otherwise.
-		{
-			while (currLine != null && !currLine.contains("/div"))
-				currLine = pageReader.readLine();
-				
-			if (currLine != null)
-				currLine = currLine.trim();
-		}
-		
-		if (!isPool && currLine.contains("id=\"pool-show\""))
-		// If the line includes the given phrase, the page is a pool.
-		{
-			isPool = true;
-			
-			// Snip off this part of the current line, and continue parsing.
-			currLine = currLine.substring(currLine.indexOf("id=\"pool-show\"")+14,currLine.length());
-		}
-			
+//------------------------------------------------------------------------------	
 		if (nextPage == null)
 		{
 			if (currLine.contains("=\"next\""))
@@ -108,22 +68,9 @@ public class DanbooruScanner extends PageScanner
 
 
 //------------------------------------------------------------------------------
-// The following conditionals find connections, and modify the current line.
-//------------------------------------------------------------------------------			
-		if (currLine.contains("directlink largeimg"))
-		// If there are direct links to the fullsize image on the thumbnail
-		// page, then don't screw around and just follow that link.
-		{
-			int start = currLine.indexOf("http",currLine.indexOf("directlink largeimg"));
-			String imgPage = currLine.substring(start,currLine.indexOf('\"',start));
-			
-			connection = new FileConnection(new URL(imgPage),saveTo);
-			
-			// Snip off this part of the current line, and continue parsing.
-			currLine = currLine.substring(start+imgPage.length(),currLine.length());
-		}
-			
-		else if (currLine.contains("/post/show/"))
+// The following conditional finds connections, and modifies the current line.
+//------------------------------------------------------------------------------	
+		if (currLine.contains("/post/show/"))
 		// If a link to an image page is encountered, follow it and download
 		// the image.
 		{
@@ -135,20 +82,6 @@ public class DanbooruScanner extends PageScanner
 			// Snip off this part of the current line, and continue parsing.
 			currLine = currLine.substring(start+imgPage.length(),currLine.length());
 		}
-		
-		else if (currLine.contains("class=\"thumb\""))
-		// This is for Gelbooru, which seems to have a different front-end.
-		{
-			int start = currLine.indexOf("index.php", currLine.indexOf("class=\"thumb\""));
-			
-			String imgPage = currLine.substring(start,currLine.indexOf('\"',start));
-			imgPage = replaceAll(imgPage,"&amp;","&");
-			
-			connection = new FileConnection(getDirectLink(serverName+"/"+imgPage),saveTo);
-			
-			// Snip off this part of the current line, and continue parsing.
-			currLine = currLine.substring(currLine.indexOf('\"',start),currLine.length());
-		}
 //------------------------------------------------------------------------------
 
 		if (connection == null)
@@ -157,7 +90,7 @@ public class DanbooruScanner extends PageScanner
 		return connection;
 	}
 	
-	private URL getDirectLink(String pageName) throws Exception
+	protected URL getDirectLink(String pageName) throws Exception
 	// Parse a page for a direct link.
 	{
 		URL link = null;
@@ -197,8 +130,6 @@ public class DanbooruScanner extends PageScanner
 		
 		return link;
 	}
-	
-	
 	
 	public static String replaceAll(String source, String pattern, String replacement)
 	// courtesy of teh interwebs.

@@ -1,6 +1,6 @@
 //==============================================================================
 // Date Created:		2 August 2009
-// Last Updated:		30 August 2012
+// Last Updated:		2 October 2012
 //
 // File name:			PageScanner.java
 // File author:			Matthew Hydock
@@ -25,7 +25,7 @@ abstract class PageScanner
 
 	protected int pageNavi;
 	protected int readLines;
-	protected HashMap<URL,Integer> history;
+	static protected HashMap<URL,Integer> history;
 
 	protected boolean scannerInit;
 

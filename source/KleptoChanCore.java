@@ -63,7 +63,7 @@ public class KleptoChanCore
 	// Initialize core variables.
 	{
 		// Instantiate the ArrayLists and other objects.
-		scanner		= new DanbooruScanner();
+		scanner		= new BooruMetaScanner();
 		
 		fileList	= new Vector<FileConnection>(maxLookAhead, maxLookAhead);
 		
