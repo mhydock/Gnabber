@@ -76,8 +76,12 @@ public class DanbooruScanner extends PageScanner
 		{
 			int start = currLine.indexOf("/post/show/");
 			String imgPage = currLine.substring(start,currLine.indexOf('\"',start));
-				
-			connection = new FileConnection(getDirectLink(serverName+imgPage),saveTo);
+			URL url = getDirectLink(serverName+imgPage);
+
+			// In case the page actually didn't have anything to save, normally
+			// caused by not accounting for a specific file type that warrented
+			// a specialized page formatting (like flash files).
+			if (url != null)	connection = new FileConnection(url,saveTo);
 			
 			// Snip off this part of the current line, and continue parsing.
 			currLine = currLine.substring(start+imgPage.length(),currLine.length());
@@ -103,7 +107,7 @@ public class DanbooruScanner extends PageScanner
 		for (String currLine = pageReader.readLine(); currLine != null; currLine = pageReader.readLine())
 		// Scan the html looking for a link that leads to the desired image.
 		{			
-			if (currLine.contains("id=\"highres\"") || currLine.contains("Original image"))
+			if (currLine.contains("id=\"highres\"") || currLine.contains("Original image") || currLine.contains("name=\"movie\""))
 			// Found link, save link location as URL.
 			{
 				String url = "";
