@@ -2,14 +2,15 @@
 // Date Created:		25 July 2009
 // Last Updated:		29 August 2012
 //
-// File name:			KleptoChan.java
+// File name:			Gnabber.java
 // File author:			Matthew Hydock
-// File description:	Contains the GUI for KleptoChan, along with private
+// File description:	Contains the GUI for Gnabber, along with private
 //						classes that deal with actions and display updates.
 //
-// Program name:		Klepto-chan
-// Program description:	A web crawling image downloader built for sites like
-//						Danbooro, Gelbooru, moe.imouto, etc.
+// Program name:		Gnabber
+// Program description:	A web crawling mass-downloader. Technically file-type
+//						agnostic, but currently only capable of parsing specific
+//						image boards. The parser will be swapable in the future.
 //==============================================================================
 
 import java.awt.*;
@@ -17,7 +18,7 @@ import java.awt.event.*;
 import javax.swing.*;
 import java.net.URL;
 
-public class KleptoChan extends JFrame
+public class Gnabber extends JFrame
 {
 	// Hopefully self-explanatory GUI components.
 	private JLabel header;
@@ -43,14 +44,14 @@ public class KleptoChan extends JFrame
 	private volatile String lastDir = null;
 		
 	// Singleton that holds all core information.
-	private KleptoChanCore core = KleptoChanCore.getInstance();
+	private GnabberCore core = GnabberCore.getInstance();
 	
 //==============================================================================
 // Oh look, a massive constructor...
 //==============================================================================	
-	public KleptoChan(boolean lf)
+	public Gnabber(boolean lf)
 	{
-		super("Klepto-chan, the kleptomaniacal web crawler!");
+		super("Gnabber -- An automated, web-crawling mass-downloader");
 		
 		// Attempt to make a log file.
 		Debugger.setActive(lf);
@@ -203,7 +204,7 @@ public class KleptoChan extends JFrame
 					core.stopThreads();
 					watcher.interrupt();
 					
-					Debugger.report("KleptoChan: Threads stopped.");
+					Debugger.report("Gnabber: Threads stopped.");
 				}catch (Exception ex)
 				{
 					Debugger.report(ex.getMessage());
@@ -241,7 +242,7 @@ public class KleptoChan extends JFrame
 						for (int i = 0; i < core.getNumTotal() && core.getNumBroken() > 0; i++)
 							core.resetFileConnectionError(i);
 							
-						Debugger.report("KleptoChan: [[Repair mode entered]]");
+						Debugger.report("Gnabber: [[Repair mode entered]]");
 					}
 					
 					core.setScannerParams(urlField.getText(),saveField.getText());
@@ -257,7 +258,7 @@ public class KleptoChan extends JFrame
 					watcher	= new GUIRefresher();
 					watcher.start();
 					
-					Debugger.report("KleptoChan: Threads started.");
+					Debugger.report("Gnabber: Threads started.");
 				}catch (Exception ex)
 				{
 					Debugger.report(ex.getMessage());
@@ -353,6 +354,6 @@ public class KleptoChan extends JFrame
 //==============================================================================
 	public static void main (String[] args)
 	{
-		KleptoChan kc = new KleptoChan(args.length==1 && args[0].equals("log"));
+		Gnabber gn = new Gnabber(args.length==1 && args[0].equals("log"));
 	}
 }

@@ -2,22 +2,22 @@
 // Date Created:		10 October 2009
 // Last Updated:		29 August 2012
 //
-// File name:			KleptoChanCore.java
+// File name:			GnabberCore.java
 // File author:			Matthew Hydock
-// File description:	A singleton class to store common data for Klepto-chan.
-//						This was removed from the Klepto-chan GUI in an attempt
-//						to make the various components more modular. This class
-//						contains the minimum components to make an image scanner
-//						for Danbooru-based image boards. Future versions will
-//						leave the setting of the scanner to the UI.
+// File description:	A singleton class to store common data for Gnabber.	This
+//						was removed from the Gnabber GUI in an attempt to make
+//						the various components more modular. This class contains
+//						the minimum components required to make a semi-automated
+//						mass downloader. Future versions will leave the setting
+//						of the parser to the UI.
 //==============================================================================
 
 import java.util.Vector;
 import javax.swing.*;
 
-public class KleptoChanCore
+public class GnabberCore
 {
-	private static KleptoChanCore core  = new KleptoChanCore();
+	private static GnabberCore core  = new GnabberCore();
 
 	// List to contain all files. Specific lists, such as only broken or only
 	// finished, will be generated on demand.
@@ -43,11 +43,11 @@ public class KleptoChanCore
 	// Thread control.
 	private boolean running = false;
 		
-	private KleptoChanCore()
+	private GnabberCore()
 	{
 	}
 	
-	public static synchronized KleptoChanCore getInstance()
+	public static synchronized GnabberCore getInstance()
 	{
 		return core;
 	}
@@ -79,13 +79,13 @@ public class KleptoChanCore
 		listUpdater = null;
 		fileDownloader = null;
 		
-		Debugger.report("KleptoChanCore: Threads cleared.");
+		Debugger.report("GnabberCore: Threads cleared.");
 		
 		// Initialize threads.
 		listUpdater		= new FileListUpdateThread();
 		fileDownloader	= new FileDownloadThread();
 				
-		Debugger.report("KleptoChanCore: Threads created.");
+		Debugger.report("GnabberCore: Threads created.");
 	}
 //==============================================================================	
 
@@ -156,7 +156,7 @@ public class KleptoChanCore
 	public void setMaxQueueLength(int mql)
 	{
 		if (areThreadsRunning())
-			Debugger.report("KleptoChanCore: Can't change queue length, threads already running.");
+			Debugger.report("GnabberCore: Can't change queue length, threads already running.");
 		else
 			maxQueueLength = mql;
 	}
@@ -164,7 +164,7 @@ public class KleptoChanCore
 	public void setMaxLookAhead(int mla)
 	{
 		if (areThreadsRunning())
-			Debugger.report("KleptoChanCore: Can't change look ahead, threads already running.");
+			Debugger.report("GnabberCore: Can't change look ahead, threads already running.");
 		else
 			maxLookAhead = mla;
 	}
@@ -172,7 +172,7 @@ public class KleptoChanCore
 	public void setMaxPageNavi(int mpn)
 	{
 		if (areThreadsRunning())
-			Debugger.report("KleptoChanCore: Can't change page navigation limit, threads already running.");
+			Debugger.report("GnabberCore: Can't change page navigation limit, threads already running.");
 		else
 			maxPageNavi = mpn;
 	}
@@ -255,7 +255,7 @@ public class KleptoChanCore
 	{
 		if (areThreadsRunning())
 		{
-			Debugger.report("KleptoChanCore: Threads being asked to stop...");
+			Debugger.report("GnabberCore: Threads being asked to stop...");
 			
 			running = false;
 		}
