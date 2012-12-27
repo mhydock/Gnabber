@@ -1,2 +1,2 @@
-Main-Class: KleptoChanListVer
+Main-Class: Gnabber
 Class-Path: ./

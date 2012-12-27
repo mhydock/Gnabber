@@ -1,13 +1,10 @@
-Klepto-chan is a simple webcrawler, originally designed to scour Danbooru-style
-image boards, downloading images when direct links weren't provided on the 
-gallery pages. After a number of re-writes, the current interface and the HTML
-parser have been isolated, theoretically making Klepto-chan capable of combing
-ANY website and downloading ANY content the user wants.
+Gnabber is a simple webcrawler written in Java. Technically, it is capable of
+downloading any kind of file on any website, limited only by its page parser.
 
-Currently, this versatility can only be accomplished by writing a custom parser
-class, modifying some code, and then recompiling, but in the future I hope to
-make the parser plugin-based, which would allow users to create and share site
-parsers, and swap them on the fly.
+Currently though, this versatility can only be accomplished by writing a custom
+parser class, modifying some code in the core, and then recompiling, but in the
+future I hope to make the parser plugin-based, which would allow users to create
+and share site parsers, and swap them on the fly.
 
 Other planned features include a preferences editor (instead of needing to
 recompile), a download queue (for multiple sites), and right-click access to
