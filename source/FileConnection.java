@@ -1,6 +1,6 @@
 //==============================================================================
 // Date Created:		25 July 2009
-// Last Updated:		17 October 2011
+// Last Updated:		27 January 2013
 //
 // File name:			FileConnection.java
 // File author:			Matthew Hydock
@@ -19,6 +19,7 @@ public class FileConnection
 	
 	// File attributes.
 	private String saveTo;
+	private String referer;
 	private File savedFile;
 	private long currSize;
 	private long finalSize;
@@ -33,7 +34,7 @@ public class FileConnection
 	// Error flags.
 	public String error;
 	
-	public FileConnection(URL link, String path) throws Exception
+	public FileConnection(URL link, String path, String refer) throws Exception
 	// Parse the html of an image page, and save the desired data.
 	{
 		// Flags and counters, for connection issues;
@@ -42,6 +43,11 @@ public class FileConnection
 		
 		// Set the path for the File to be downloaded to.
 		saveTo = path;
+		
+		// Set the referer address (if provided).
+		referer = (refer != null)?refer:"";
+		System.out.println("referer: " + referer);
+		System.out.flush();
 		
 		// Make a new local file with the name of the server file.
 		String filename = this.link.getFile();
@@ -83,7 +89,9 @@ public class FileConnection
 	{
 		try
 		{
-			URLConnection serverFile = link.openConnection();
+			HttpURLConnection serverFile = (HttpURLConnection)link.openConnection();
+			serverFile.addRequestProperty("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Ubuntu Chromium/23.0.1271.97 Chrome/23.0.1271.97 Safari/537.11");
+			serverFile.addRequestProperty("REFERER", referer);
 			serverFile.connect();
 			finalSize = serverFile.getContentLength();
 			lastMod = serverFile.getLastModified();

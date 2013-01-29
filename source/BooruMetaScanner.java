@@ -1,6 +1,6 @@
 //==============================================================================
 // Date Created:		2 October 2012
-// Last Updated:		2 October 2012
+// Last Updated:		28 January 2013
 //
 // File name:			BooruMetaScanner.java
 // File author:			Matthew Hydock
@@ -32,6 +32,7 @@ public class BooruMetaScanner extends PageScanner
 		if (serverName.contains("danbooru"))		scanner = new DanbooruScanner();
 		else if (serverName.contains("gelbooru"))	scanner = new GelbooruScanner();
 		else if (serverName.contains("yande.re"))	scanner = new MoeImoutoScanner();
+		else if (serverName.contains("konachan"))	scanner = new MoeImoutoScanner();
 		else if (serverName.contains("sankaku"))	scanner = new SankakuScanner();
 		else if (serverName.contains("derpiboo"))	scanner = new DerpibooruScanner();
 		else 										scanner = new DanbooruScanner();

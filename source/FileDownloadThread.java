@@ -15,7 +15,7 @@ class FileDownloadThread extends ThreadPlus
 {
 	private int aLoc;					// Array location.
 	private int qPos;					// Queue position.
-	private FileConnection[] queue;	// File queue.
+	private FileConnection[] queue;		// File queue.
 	
 	public void run()
 	// Pull an available file connection from the list, and start downloading.

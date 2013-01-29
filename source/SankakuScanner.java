@@ -1,6 +1,6 @@
 //==============================================================================
 // Date Created:		2 October 2012
-// Last Updated:		3 October 2012
+// Last Updated:		28 January 2013
 //
 // File name:			SankakuScanner.java
 // File author:			Matthew Hydock
@@ -24,7 +24,7 @@ public class SankakuScanner extends DanbooruScanner
 		// picked up eventually, and will cause conflicts otherwise.
 		{
 			while (currLine != null && !currLine.contains("/div"))
-				currLine = pageReader.readLine();
+				currLine = getNextLine();
 				
 			if (currLine != null)
 				currLine = currLine.trim();
@@ -79,10 +79,10 @@ public class SankakuScanner extends DanbooruScanner
 		// If a link to an image page is encountered, follow it and download
 		// the image.
 		{
-			int start = currLine.indexOf("/post/show/");
+			int start = currLine.indexOf("post/show/");
 			String imgPage = currLine.substring(start,currLine.indexOf('\"',start));
-				
-			connection = new FileConnection(getDirectLink(serverName+imgPage),saveTo);
+			
+			connection = new FileConnection(getDirectLink(serverName+imgPage),saveTo,serverName+imgPage);
 			
 			// Snip off this part of the current line, and continue parsing.
 			currLine = currLine.substring(start+imgPage.length(),currLine.length());

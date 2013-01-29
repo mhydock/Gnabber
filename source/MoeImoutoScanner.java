@@ -1,6 +1,6 @@
 //==============================================================================
 // Date Created:		2 October 2012
-// Last Updated:		3 October 2012
+// Last Updated:		27 January 2013
 //
 // File name:			MoeImoutoScanner.java
 // File author:			Matthew Hydock
@@ -18,6 +18,8 @@ import java.net.*;
 
 public class MoeImoutoScanner extends DanbooruScanner
 {
+	private boolean splittingMode = false;
+	
 	public FileConnection parsePage() throws Exception
 	// Parse the page. 
 	{
@@ -60,7 +62,20 @@ public class MoeImoutoScanner extends DanbooruScanner
 			int start = currLine.indexOf("http",currLine.indexOf("directlink largeimg"));
 			String imgPage = currLine.substring(start,currLine.indexOf('\"',start));
 			
-			connection = new FileConnection(new URL(imgPage),saveTo);
+			connection = new FileConnection(new URL(imgPage),saveTo,currPage.getFile());
+			
+			// Snip off this part of the current line, and continue parsing.
+			currLine = currLine.substring(start+imgPage.length(),currLine.length());
+		}
+		
+		else if (currLine.contains("directlink smallimg"))
+		// Same as above, but sometimes the image isn't massive so the site
+		// calls it a "smallimg".
+		{
+			int start = currLine.indexOf("http",currLine.indexOf("directlink smallimg"));
+			String imgPage = currLine.substring(start,currLine.indexOf('\"',start));
+			
+			connection = new FileConnection(new URL(imgPage),saveTo,currPage.getFile());
 			
 			// Snip off this part of the current line, and continue parsing.
 			currLine = currLine.substring(start+imgPage.length(),currLine.length());
@@ -70,10 +85,10 @@ public class MoeImoutoScanner extends DanbooruScanner
 		// If direct links are unavailable for some reason, but a link to an
 		// image page is encountered, follow it and download the image.
 		{
-			int start = currLine.indexOf("/post/show/");
+			int start = currLine.indexOf("post/show/");
 			String imgPage = currLine.substring(start,currLine.indexOf('\"',start));
 				
-			connection = new FileConnection(getDirectLink(serverName+imgPage),saveTo);
+			connection = new FileConnection(getDirectLink(serverName+imgPage),saveTo,serverName+imgPage);
 			
 			// Snip off this part of the current line, and continue parsing.
 			currLine = currLine.substring(start+imgPage.length(),currLine.length());
@@ -84,5 +99,37 @@ public class MoeImoutoScanner extends DanbooruScanner
 			currLine = "";
 			
 		return connection;
+	}
+	
+	protected String getNextLine()
+	{
+		if (!splittingMode)
+		{
+			String temp = super.getNextLine();
+		
+			if (temp.contains("<ul id=\"post-list-posts\">"))
+			{
+				splittingMode = true;
+				System.out.println("Now in line splitting mode");
+				pageReader.useDelimiter("<li |</li>|\\n");
+			}
+			
+			return temp;
+		}
+		else
+		{
+			String temp = pageReader.next();
+			
+			System.out.println(temp);
+			
+			if (temp.contains("</ul>"))
+			{
+				splittingMode = false;
+				System.out.println("Leaving line splitting mode...");
+				pageReader.reset();
+			}
+				
+			return temp;
+		}
 	}
 }

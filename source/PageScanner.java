@@ -1,6 +1,6 @@
 //==============================================================================
 // Date Created:		2 August 2009
-// Last Updated:		2 October 2012
+// Last Updated:		28 January 2013
 //
 // File name:			PageScanner.java
 // File author:			Matthew Hydock
@@ -8,8 +8,10 @@
 //						lists of downloadable content.
 //==============================================================================
 
-import java.io.*;
-import java.net.*;
+import java.net.URL;
+import java.io.File;
+import java.io.InputStreamReader;
+import java.util.Scanner;
 import java.util.HashMap;
 
 abstract class PageScanner
@@ -21,7 +23,7 @@ abstract class PageScanner
 	protected String currLine;
 	protected String saveTo;
 	
-	protected BufferedReader pageReader;
+	protected Scanner pageReader;
 
 	protected int pageNavi;
 	protected int readLines;
@@ -88,8 +90,8 @@ abstract class PageScanner
 			history.put(currPage,0);
 			
 			// Open the reader and read in the first line.
-			pageReader = new BufferedReader(new InputStreamReader(currPage.openStream()));
-			currLine = pageReader.readLine();
+			pageReader = new Scanner(new InputStreamReader(currPage.openStream()));
+			currLine = pageReader.nextLine();
 
 			if (currLine != null)
 			{
@@ -112,11 +114,11 @@ abstract class PageScanner
 		pageReader	= null;
 		currLine	= null;
 
-		pageReader	= new BufferedReader(new InputStreamReader(currPage.openStream()));
+		pageReader	= new Scanner(new InputStreamReader(currPage.openStream()));
 		readLines	= history.get(currPage);
 		
 		for (int i = 0; i < readLines; i++)
-			currLine = pageReader.readLine();
+			currLine = pageReader.nextLine();
 		
 		if (currLine != null)
 			currLine = currLine.trim();
@@ -193,24 +195,15 @@ abstract class PageScanner
 		// Read lines until there are no more lines, a connection has been
 		// found, or the max page navigation limit has been reached.
 		{	
-			// Skip empty lines.
-			while (currLine != null && currLine.length() == 0)
-			{
-				currLine = pageReader.readLine();
-				
-				if (currLine != null)
-				{
-					currLine = currLine.trim();
-					readLines++;
-				}
-			}
-			
+			// Get the next line, skipping any empty lines.
+			currLine = getNextLine();
+	
 			// The reader has reached the end of the page, but there are still
 			// more pages to be read.
 			if (currLine == null && nextPage != null)
 			{
 				goNextPage();
-				currLine = pageReader.readLine();
+				currLine = getNextLine();
 				
 				if (currLine != null)
 				{
@@ -261,7 +254,30 @@ abstract class PageScanner
 	
 //==============================================================================
 // Private methods to clean up the connection generator.
-//==============================================================================z	
+//==============================================================================
+	protected String getNextLine()
+	// Brought out of the main parsing loop because some sites don't know how to
+	// use a damned new line, and a subclass may need to modify this.
+	{
+		// If the scanner is at the end, don't even bother.
+		if (!pageReader.hasNextLine())
+			return null;
+
+		String temp = null;
+		
+		// Read in first non-empty line.
+		do
+		{
+			temp = pageReader.nextLine();
+			temp = temp.trim();
+			
+			readLines++;
+		} while ((temp == null || temp.length() == 0) && pageReader.hasNextLine());
+
+		
+		return temp;
+	}
+	
 	private void goNextPage() throws Exception
 	// Go to the next page, set next page variable to null.
 	{
@@ -274,7 +290,7 @@ abstract class PageScanner
 					
 		// Change the URL and connect the streams again.
 		currPage = new URL(nextPage);
-		pageReader = new BufferedReader(new InputStreamReader(currPage.openStream()));
+		pageReader = new Scanner(new InputStreamReader(currPage.openStream()));
 				
 		// Remove any indication that there was a next page.
 		nextPage = null;

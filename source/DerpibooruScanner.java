@@ -1,6 +1,6 @@
 //==============================================================================
 // Date Created:		2 October 2012
-// Last Updated:		3 October 2012 
+// Last Updated:		28 January 2013
 //
 // File name:			DerpibooruScanner.java
 // File author:			Matthew Hydock
@@ -29,7 +29,7 @@ public class DerpibooruScanner extends DanbooruScanner
 			// then remember the link. On Derpibooru, the link is on the next
 			// line, so advance the line first.
 			{
-				currLine = pageReader.readLine();
+				currLine = getNextLine();
 				
 				int start = currLine.indexOf("\"")+1;
 				String temp = serverName;
@@ -62,7 +62,7 @@ public class DerpibooruScanner extends DanbooruScanner
 			int start = currLine.indexOf("href");
 			String imgPage = currLine.substring(start,currLine.indexOf('\"',start));
 				
-			connection = new FileConnection(getDirectLink(serverName+imgPage),saveTo);
+			connection = new FileConnection(getDirectLink(serverName+imgPage),saveTo,serverName+imgPage);
 			
 			// Snip off this part of the current line, and continue parsing.
 			currLine = currLine.substring(start+imgPage.length(),currLine.length());
@@ -85,7 +85,7 @@ public class DerpibooruScanner extends DanbooruScanner
 		pageLink = new URL(pageName);		
 		BufferedReader pageReader = new BufferedReader(new InputStreamReader(pageLink.openStream()));
 
-		for (String currLine = pageReader.readLine(); currLine != null; currLine = pageReader.readLine())
+		for (String currLine = getNextLine(); currLine != null; currLine = getNextLine())
 		// Scan the html looking for a link that leads to the desired image.
 		{
 			if (currLine.contains(">View</a>"))

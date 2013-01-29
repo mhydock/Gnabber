@@ -1,6 +1,6 @@
 //==============================================================================
 // Date Created:		13 September 2010
-// Last Updated:		30 August 2012
+// Last Updated:		28 January 2013
 //
 // File name:			DanbooruScanner.java
 // File author:			Matthew Hydock
@@ -81,7 +81,7 @@ public class DanbooruScanner extends PageScanner
 			// In case the page actually didn't have anything to save, normally
 			// caused by not accounting for a specific file type that warrented
 			// a specialized page formatting (like flash files).
-			if (url != null)	connection = new FileConnection(url,saveTo);
+			if (url != null)	connection = new FileConnection(url,saveTo,serverName+imgPage);
 			
 			// Snip off this part of the current line, and continue parsing.
 			currLine = currLine.substring(start+imgPage.length(),currLine.length());
@@ -104,7 +104,7 @@ public class DanbooruScanner extends PageScanner
 		pageLink = new URL(pageName);		
 		BufferedReader pageReader = new BufferedReader(new InputStreamReader(pageLink.openStream()));
 
-		for (String currLine = pageReader.readLine(); currLine != null; currLine = pageReader.readLine())
+		for (String currLine = getNextLine(); currLine != null; currLine = getNextLine())
 		// Scan the html looking for a link that leads to the desired image.
 		{			
 			if (currLine.contains("id=\"highres\"") || currLine.contains("Original image") || currLine.contains("name=\"movie\""))

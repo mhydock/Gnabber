@@ -1,6 +1,6 @@
 //==============================================================================
 // Date Created:		2 October 2012
-// Last Updated:		2 October 2012
+// Last Updated:		28 January 2013
 //
 // File name:			GelbooruScanner.java
 // File author:			Matthew Hydock
@@ -83,7 +83,7 @@ public class GelbooruScanner extends DanbooruScanner
 			// The structure is slightly different for pools for some reason.
 			// The link to the image page is on the next line instead.
 			{
-				currLine = pageReader.readLine();
+				currLine = getNextLine();
 				start = currLine.indexOf("index.php");
 			}
 			else
@@ -92,7 +92,7 @@ public class GelbooruScanner extends DanbooruScanner
 			String imgPage = currLine.substring(start,currLine.indexOf('\"',start));
 			imgPage = replaceAll(imgPage,"&amp;","&");
 			
-			connection = new FileConnection(getDirectLink(serverName+"/"+imgPage),saveTo);
+			connection = new FileConnection(getDirectLink(serverName+"/"+imgPage),saveTo,serverName+"/"+imgPage);
 			
 			// Snip off this part of the current line, and continue parsing.
 			currLine = currLine.substring(currLine.indexOf('\"',start),currLine.length());
