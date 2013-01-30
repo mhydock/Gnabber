@@ -1,6 +1,6 @@
 //==============================================================================
 // Date Created:		2 October 2012
-// Last Updated:		28 January 2013
+// Last Updated:		30 January 2013
 //
 // File name:			GelbooruScanner.java
 // File author:			Matthew Hydock
@@ -92,7 +92,7 @@ public class GelbooruScanner extends DanbooruScanner
 			String imgPage = currLine.substring(start,currLine.indexOf('\"',start));
 			imgPage = replaceAll(imgPage,"&amp;","&");
 			
-			connection = new FileConnection(getDirectLink(serverName+"/"+imgPage),saveTo,serverName+"/"+imgPage);
+			connection = new FileConnection(getDirectLink(serverName+imgPage),saveTo,serverName+imgPage);
 			
 			// Snip off this part of the current line, and continue parsing.
 			currLine = currLine.substring(currLine.indexOf('\"',start),currLine.length());

@@ -1,6 +1,6 @@
 //==============================================================================
 // Date Created:		25 July 2009
-// Last Updated:		27 January 2013
+// Last Updated:		30 January 2013
 //
 // File name:			FileConnection.java
 // File author:			Matthew Hydock
@@ -46,8 +46,8 @@ public class FileConnection
 		
 		// Set the referer address (if provided).
 		referer = (refer != null)?refer:"";
-		System.out.println("referer: " + referer);
-		System.out.flush();
+//		System.out.println("referer: " + referer);
+//		System.out.flush();
 		
 		// Make a new local file with the name of the server file.
 		String filename = this.link.getFile();

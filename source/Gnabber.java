@@ -1,6 +1,6 @@
 //==============================================================================
 // Date Created:		25 July 2009
-// Last Updated:		29 August 2012
+// Last Updated:		30 January 2013
 //
 // File name:			Gnabber.java
 // File author:			Matthew Hydock
@@ -332,10 +332,10 @@ public class Gnabber extends JFrame
 			refresh();
 			if (core.isRunning() && isDownloading) download.doClick();
 			
-			System.out.println("stuff done.");
-			if (isDownloading)	System.out.println("isDownloading true");
-			else				System.out.println("isDownloading false");
-			System.out.flush();
+//			System.out.println("stuff done.");
+//			if (isDownloading)	System.out.println("isDownloading true");
+//			else				System.out.println("isDownloading false");
+//			System.out.flush();
 		}
 						
 		private synchronized void refresh()
